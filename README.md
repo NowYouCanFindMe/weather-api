@@ -2,6 +2,10 @@
 
 React single-page weather app with GPS-based lookup and AI outfit suggestions.
 
+![Dashboard](dashboard.png)
+
+Website: `https://weather-api-72g0.onrender.com/`
+
 ## Features
 
 - Current conditions from Open-Meteo (no API key required).
