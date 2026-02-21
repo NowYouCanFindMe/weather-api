@@ -1,4 +1,4 @@
-const { useMemo, useState } = React;
+const { useEffect, useMemo, useState } = React;
 
 const WEATHER_CODE_MAP = {
   0: "Clear sky",
@@ -30,6 +30,26 @@ const WEATHER_CODE_MAP = {
   96: "Thunderstorm with light hail",
   99: "Thunderstorm with heavy hail",
 };
+
+const API_BASE = (() => {
+  const DEV_BASE = "http://localhost:8989";
+  const PROD_BASE = "https://weather-api-72g0.onrender.com";
+
+  if (typeof window === "undefined") return DEV_BASE;
+
+  const manualBase = window.__API_BASE__;
+  if (typeof manualBase === "string" && manualBase.trim()) {
+    return manualBase.trim().replace(/\/+$/, "");
+  }
+
+  const manualEnv = window.__APP_ENV__;
+  if (manualEnv === "development") return DEV_BASE;
+  if (manualEnv === "production") return PROD_BASE;
+
+  const host = window.location.hostname;
+  const isLocal = host === "localhost" || host === "127.0.0.1";
+  return isLocal ? DEV_BASE : PROD_BASE;
+})();
 
 const toCardinal = (degree) => {
   if (typeof degree !== "number") return "--";
@@ -65,6 +85,15 @@ function App() {
   const [cityError, setCityError] = useState("");
   const [manualLat, setManualLat] = useState("");
   const [manualLon, setManualLon] = useState("");
+
+  useEffect(() => {
+    const ping = () => {
+      fetch(new URL("/api/heartbeat", API_BASE).toString()).catch(() => {});
+    };
+    ping();
+    const intervalId = setInterval(ping, 1000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const canGeolocate = typeof navigator !== "undefined" && "geolocation" in navigator;
 
@@ -135,7 +164,7 @@ function App() {
     setAdviceStatus("loading");
     setAdviceError("");
     try {
-      const response = await fetch("http://localhost:8989/api/suggest", {
+      const response = await fetch(new URL("/api/suggest", API_BASE).toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weather: weatherPayload }),

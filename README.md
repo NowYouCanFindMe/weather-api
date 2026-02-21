@@ -20,6 +20,9 @@ Create a `.env` file (or copy `.env.example`) and add your key:
 
 ```
 OPEN_AI_KEY=your-key-here
+APP_ENV=development
+# Optional: overrides APP_ENV
+API_BASE=http://localhost:8989
 ```
 
 ## Run

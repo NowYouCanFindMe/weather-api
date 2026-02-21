@@ -8,6 +8,11 @@
   </head>
   <body>
     <div id="root"></div>
+    <script id="app-env">
+      // Defaults (can be overridden via server-side .env injection)
+      window.__APP_ENV__ = "auto";
+      window.__API_BASE__ = "";
+    </script>
     <script
       crossorigin
       src="https://unpkg.com/react@18/umd/react.development.js"

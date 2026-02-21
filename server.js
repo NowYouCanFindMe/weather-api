@@ -4,6 +4,7 @@ const path = require("path");
 const https = require("https");
 
 const PORT = process.env.PORT || 8989;
+const HOST = "0.0.0.0";
 const ROOT = process.cwd();
 
 const mimeTypes = {
@@ -143,6 +144,23 @@ const buildPrompt = (weather) => {
   ].join("\n");
 };
 
+const injectClientEnv = (html) => {
+  let output = html;
+  if (process.env.APP_ENV) {
+    output = output.replace(
+      /window\.__APP_ENV__\s*=\s*["'][^"']*["'];/,
+      `window.__APP_ENV__ = ${JSON.stringify(process.env.APP_ENV)};`
+    );
+  }
+  if (process.env.API_BASE) {
+    output = output.replace(
+      /window\.__API_BASE__\s*=\s*["'][^"']*["'];/,
+      `window.__API_BASE__ = ${JSON.stringify(process.env.API_BASE)};`
+    );
+  }
+  return output;
+};
+
 const serveFile = (req, res) => {
   let urlPath = req.url.split("?")[0];
   if (urlPath === "/") urlPath = "/index.html";
@@ -156,6 +174,11 @@ const serveFile = (req, res) => {
     }
     const ext = path.extname(filePath).toLowerCase();
     res.writeHead(200, { "Content-Type": mimeTypes[ext] || "application/octet-stream" });
+    if (ext === ".html") {
+      const html = injectClientEnv(data.toString("utf8"));
+      res.end(html);
+      return;
+    }
     res.end(data);
   });
 };
@@ -168,6 +191,15 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  if (req.url === "/api/heartbeat" && req.method === "GET") {
+    respondJson(res, 200, {
+      status: "ok",
+      uptime: Math.round(process.uptime()),
+      timestamp: new Date().toISOString(),
+    });
     return;
   }
 
@@ -204,6 +236,6 @@ const server = http.createServer(async (req, res) => {
   serveFile(req, res);
 });
 
-server.listen(PORT, "127.0.0.1", () => {
-  console.log(`http://localhost:${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`Listening on ${HOST}:${PORT}`);
 });
